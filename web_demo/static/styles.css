@@ -1,0 +1,273 @@
+:root {
+  --bg: #f4efe7;
+  --panel: rgba(255, 251, 245, 0.92);
+  --line: rgba(53, 48, 38, 0.12);
+  --text: #241f19;
+  --muted: #6f6659;
+  --accent: #0d7a73;
+  --accent-strong: #095d58;
+  --alert: #a6573b;
+  --shadow: 0 24px 60px rgba(51, 42, 28, 0.14);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", "PingFang SC", "Hiragino Sans GB", sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(13, 122, 115, 0.12), transparent 28rem),
+    radial-gradient(circle at right center, rgba(166, 87, 59, 0.1), transparent 24rem),
+    linear-gradient(180deg, #f8f4ed 0%, #efe7dc 100%);
+  min-height: 100vh;
+}
+
+.page {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 32px 24px 48px;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 20px;
+  align-items: stretch;
+  margin-bottom: 20px;
+}
+
+.hero-copy,
+.hero-status,
+.panel {
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.hero-copy {
+  padding: 28px;
+}
+
+.hero-status {
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.eyebrow {
+  margin: 0 0 12px;
+  color: var(--accent);
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: clamp(2rem, 4vw, 3.6rem);
+  line-height: 1.02;
+  margin-bottom: 14px;
+}
+
+.summary {
+  max-width: 48rem;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.status-label {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+#statusText {
+  display: block;
+  font-size: 2rem;
+  margin: 10px 0 10px;
+}
+
+#messageText {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.panel {
+  padding: 22px;
+}
+
+.panel-header {
+  margin-bottom: 18px;
+}
+
+.panel-header h2 {
+  font-size: 1.15rem;
+  margin-bottom: 6px;
+}
+
+.panel-header p {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.upload-panel {
+  margin-bottom: 20px;
+}
+
+.upload-row {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.upload-box {
+  flex: 1;
+  min-height: 72px;
+  border: 1.5px dashed rgba(13, 122, 115, 0.35);
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(13, 122, 115, 0.06);
+  color: var(--accent-strong);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.upload-box input {
+  display: none;
+}
+
+.primary-button {
+  min-width: 168px;
+  min-height: 72px;
+  border: none;
+  border-radius: 18px;
+  background: linear-gradient(135deg, var(--accent) 0%, #0b635d 100%);
+  color: white;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.primary-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.primary-button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: 2fr 0.95fr;
+  gap: 20px;
+}
+
+.viewport-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 20px;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, rgba(13, 122, 115, 0.2), rgba(36, 31, 25, 0.1)),
+    #ddd4c7;
+  border: 1px solid rgba(53, 48, 38, 0.14);
+}
+
+#frameImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;
+}
+
+.frame-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.pose-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 18px;
+}
+
+.pose-grid div {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(53, 48, 38, 0.08);
+}
+
+.pose-grid dt {
+  font-size: 0.84rem;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.pose-grid dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.control-list,
+.limit-list {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text);
+  line-height: 1.7;
+}
+
+.help-text {
+  margin-top: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+kbd {
+  padding: 0.15rem 0.42rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(36, 31, 25, 0.15);
+  background: rgba(255, 255, 255, 0.8);
+  font-family: inherit;
+  font-weight: 700;
+}
+
+@media (max-width: 980px) {
+  .hero,
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .upload-row {
+    flex-direction: column;
+  }
+
+  .primary-button {
+    width: 100%;
+  }
+}

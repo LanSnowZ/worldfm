@@ -53,3 +53,20 @@ worldfm:
   image_size: 512
   version: sigma
   cfg_scale: 4.5
+
+# ─── Web Demo: Restricted interactive exploration ────────────────────────────
+web_demo:
+  host: 127.0.0.1
+  port: 8000
+  output_root: outputs/web_demo
+  max_sessions: 1
+  session_ttl_minutes: 180
+  max_upload_mb: 20
+  move_step: 0.08
+  turn_step_deg: 5.0
+  max_radius: 0.65
+  min_pitch_deg: -35.0
+  max_pitch_deg: 35.0
+  min_request_interval_sec: 0.75
+  initial_yaw_deg: 0.0
+  initial_pitch_deg: 0.0

@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WorldFM 受限交互探索 Demo</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">WorldFM Web Demo</p>
+          <h1>受限版交互式世界探索</h1>
+          <p class="summary">
+            这个 Demo 只做固定场景代理上的小范围平移与低速转头。
+            它不会扩展无限世界, 也不是实时 3D 游戏引擎。
+          </p>
+        </div>
+        <div class="hero-status">
+          <span class="status-label">当前状态</span>
+          <strong id="statusText">未开始</strong>
+          <p id="messageText">上传一张图片后点击“生成场景”。</p>
+        </div>
+      </section>
+
+      <section class="panel upload-panel">
+        <div class="panel-header">
+          <h2>场景初始化</h2>
+          <p>只支持图片输入, 不接入 prompt。</p>
+        </div>
+        <div class="upload-row">
+          <label class="upload-box" for="imageInput">
+            <span>选择起始图片</span>
+            <input id="imageInput" type="file" accept="image/*" />
+          </label>
+          <button id="generateButton" class="primary-button" type="button">生成场景</button>
+        </div>
+      </section>
+
+      <section class="workspace">
+        <div class="panel viewport-panel">
+          <div class="panel-header">
+            <h2>当前视角</h2>
+            <p>初始化完成后, 使用键盘进行受限探索。</p>
+          </div>
+          <div class="viewport-frame">
+            <img id="frameImage" alt="当前视角预览" />
+            <div id="framePlaceholder" class="frame-placeholder">尚未生成场景</div>
+          </div>
+        </div>
+
+        <aside class="sidebar">
+          <section class="panel">
+            <div class="panel-header">
+              <h2>位姿信息</h2>
+            </div>
+            <dl class="pose-grid">
+              <div>
+                <dt>X</dt>
+                <dd id="poseX">0.00</dd>
+              </div>
+              <div>
+                <dt>Y</dt>
+                <dd id="poseY">0.00</dd>
+              </div>
+              <div>
+                <dt>Z</dt>
+                <dd id="poseZ">0.00</dd>
+              </div>
+              <div>
+                <dt>Yaw</dt>
+                <dd id="poseYaw">0.00°</dd>
+              </div>
+              <div>
+                <dt>Pitch</dt>
+                <dd id="posePitch">0.00°</dd>
+              </div>
+              <div>
+                <dt>半径</dt>
+                <dd id="poseRadius">0.00</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <h2>操作说明</h2>
+            </div>
+            <ul class="control-list">
+              <li><kbd>W</kbd> / <kbd>S</kbd> 前进 / 后退</li>
+              <li><kbd>A</kbd> / <kbd>D</kbd> 左移 / 右移</li>
+              <li><kbd>←</kbd> / <kbd>→</kbd> 左右转头</li>
+              <li><kbd>↑</kbd> / <kbd>↓</kbd> 抬头 / 低头</li>
+            </ul>
+            <p class="help-text">
+              浏览器会自动节流请求。当前帧生成期间, 只保留最后一个动作。
+            </p>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <h2>探索边界</h2>
+            </div>
+            <ul class="limit-list">
+              <li>步长: <span id="limitMoveStep">-</span></li>
+              <li>转头步长: <span id="limitTurnStep">-</span></li>
+              <li>最大半径: <span id="limitRadius">-</span></li>
+              <li>Pitch 范围: <span id="limitPitch">-</span></li>
+              <li>最短间隔: <span id="limitInterval">-</span></li>
+            </ul>
+          </section>
+        </aside>
+      </section>
+    </main>
+
+    <script src="/static/app.js" defer></script>
+  </body>
+ </html>

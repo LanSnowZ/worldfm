@@ -135,6 +135,34 @@ python run_pipeline.py --meta <META_JSON> --output_dir <OUTPUT_DIR>
 python run_pipeline.py --meta <META_JSON> --output_dir <OUTPUT_DIR> --save_mode image
 ```
 
+### Restricted Interactive Web Demo
+
+This repository also provides a local web demo for **restricted interactive exploration** on top of the existing pipeline boundaries.
+
+```bash
+python run_web_demo.py
+```
+
+Then open `http://127.0.0.1:8000` in your browser.
+
+The demo workflow is:
+
+1. Upload a single image
+2. Initialize the scene once with Step 1 / Step 2 / Step 3 init / Step 4 init
+3. Explore with limited controls:
+   - `W / S`: move forward / backward
+   - `A / D`: move left / right
+   - `ArrowLeft / ArrowRight`: turn left / right
+   - `ArrowUp / ArrowDown`: look up / down
+
+Important limitations:
+
+- This is **not** an infinite world generator
+- This is **not** a real-time 3D engine or mesh-based game renderer
+- Each new frame still comes from `step3_render_one(...)` + `step4_infer_one(...)`
+- Movement is intentionally constrained to a small radius and low update rate
+- The fixed scene proxy is cached per session and reused across actions
+
 ### Configuration
 
 Default parameters are defined in `default.yaml`. Override them via:
