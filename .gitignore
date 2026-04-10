@@ -6,3 +6,60 @@ __pycache__/
 plans/
 weights/
 upload_ckpts.py
+
+# Directory
+.vscode/
+.idea/
+__pycache__/
+__marimo__/
+*.ipynb_checkpoints/
+log/
+logs/
+.venv/
+.ruff_cache/
+.pytest_cache/
+.bg-shell/
+.tmp/
+
+# local
+/local/
+/output/
+/checkpoints/
+data/*.db
+data/memory/*.db
+data/memory/*.index
+.cache/
+
+# Build
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# File
+.DS_Store
+local_test.py
+*.log
+*.pyc
+*.ipynb
+.env
+CLAUDE.md
+AGENTS.md
+
+# Claude code
+.claude/
+.claude-history/
+
+.trellis/
+.agents/

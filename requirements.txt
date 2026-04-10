@@ -114,7 +114,7 @@ six==1.17.0
 submitit==1.4.2
 sympy==1.13.1
 tabulate==0.9.0
-tb-nightly==2.20.0a20250421 -i https://mirrors.aliyun.com/pypi/simple
+tb-nightly==2.20.0a20250421
 tensorboard-data-server==0.7.2
 termcolor==3.0.1
 threadpoolctl==3.6.0
