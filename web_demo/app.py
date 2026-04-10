@@ -15,12 +15,14 @@ from web_demo.explorer import (
     ActionName,
     ExplorerEnvironment,
     ExplorerError,
+    PresetImage,
     SceneSession,
     load_demo_config,
 )
 
 LOGGER = logging.getLogger("worldfm.web_demo")
 STATIC_DIR = Path(__file__).resolve().parent / "static"
+RESOURCE_DIR = Path(__file__).resolve().parent / "resources"
 
 
 class MoveRequest(BaseModel):
@@ -64,6 +66,20 @@ class SessionResponse(BaseModel):
     limits: Optional[LimitsResponse] = None
 
 
+class PresetResponse(BaseModel):
+    """预设图片响应."""
+
+    preset_id: str
+    title: str
+    image_url: str
+
+
+class PresetListResponse(BaseModel):
+    """预设图片列表响应."""
+
+    presets: list[PresetResponse]
+
+
 def create_app(
     *,
     config_path: str = "",
@@ -84,6 +100,7 @@ def create_app(
 
     app = FastAPI(title="WorldFM Restricted Explorer", version="0.1.0")
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+    app.mount("/resources", StaticFiles(directory=str(RESOURCE_DIR)), name="resources")
     app.state.environment = environment
     app.state.runtime_config = environment.runtime
 
@@ -128,10 +145,20 @@ def create_app(
             "session_ttl_sec": runtime.session_ttl_sec,
         }
 
+    @app.get("/api/presets", response_model=PresetListResponse)
+    def list_presets() -> PresetListResponse:
+        presets = [preset_to_response(preset) for preset in app.state.environment.list_presets()]
+        return PresetListResponse(presets=presets)
+
     @app.post("/api/sessions", response_model=SessionResponse)
     def create_session(request: Request, payload: bytes = Body(..., media_type="application/octet-stream")) -> SessionResponse:
         filename = request.headers.get("x-filename", "upload.png")
         session = app.state.environment.create_session(payload, filename)
+        return session_to_response(session)
+
+    @app.post("/api/presets/{preset_id}/sessions", response_model=SessionResponse)
+    def create_preset_session(preset_id: str) -> SessionResponse:
+        session = app.state.environment.create_session_from_preset(preset_id)
         return session_to_response(session)
 
     @app.get("/api/sessions/{session_id}", response_model=SessionResponse)
@@ -181,4 +208,13 @@ def session_to_response(session: SceneSession) -> SessionResponse:
             max_pitch_deg=limits.max_pitch_deg,
             min_request_interval_ms=int(round(limits.min_request_interval_sec * 1000)),
         ),
+    )
+
+
+def preset_to_response(preset: PresetImage) -> PresetResponse:
+    """将预设图片元数据转换为响应结构."""
+    return PresetResponse(
+        preset_id=preset.preset_id,
+        title=preset.title,
+        image_url=preset.image_url,
     )

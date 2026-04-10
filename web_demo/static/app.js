@@ -21,6 +21,8 @@ const KEY_TO_ACTION = {
 const state = {
   sessionId: window.localStorage.getItem("worldfm-session-id"),
   session: null,
+  presets: [],
+  selectedPresetId: null,
   inFlight: false,
   queuedAction: null,
   pendingTimerId: null,
@@ -29,6 +31,8 @@ const state = {
 
 const imageInput = document.getElementById("imageInput");
 const generateButton = document.getElementById("generateButton");
+const presetList = document.getElementById("presetList");
+const selectedSourceText = document.getElementById("selectedSourceText");
 const statusText = document.getElementById("statusText");
 const messageText = document.getElementById("messageText");
 const frameImage = document.getElementById("frameImage");
@@ -55,6 +59,14 @@ generateButton.addEventListener("click", () => {
   void createScene();
 });
 
+imageInput.addEventListener("change", () => {
+  if (imageInput.files?.length) {
+    state.selectedPresetId = null;
+    syncPresetSelectionUi();
+  }
+  updateSelectedSourceText();
+});
+
 window.addEventListener("keydown", (event) => {
   if (event.target instanceof HTMLInputElement || event.target instanceof HTMLButtonElement) {
     return;
@@ -72,7 +84,26 @@ window.addEventListener("keydown", (event) => {
   queueAction(action);
 });
 
-void restoreSession();
+void initializePage();
+
+async function initializePage() {
+  await loadPresets();
+  updateSelectedSourceText();
+  await restoreSession();
+}
+
+async function loadPresets() {
+  try {
+    const data = await fetchJson("/api/presets", {
+      method: "GET",
+    });
+    state.presets = Array.isArray(data.presets) ? data.presets : [];
+    renderPresetCards();
+  } catch (error) {
+    state.presets = [];
+    renderPresetCards("预设图片加载失败, 仍可上传本地图片。");
+  }
+}
 
 async function restoreSession() {
   if (!state.sessionId) {
@@ -92,8 +123,9 @@ async function restoreSession() {
 
 async function createScene() {
   const file = imageInput.files?.[0];
-  if (!file) {
-    setStatus("error", "出错", "请先选择一张图片。");
+  const presetId = file ? null : state.selectedPresetId;
+  if (!file && !presetId) {
+    setStatus("error", "出错", "请先选择一张预设图或上传图片。");
     return;
   }
 
@@ -103,14 +135,9 @@ async function createScene() {
   setGenerateDisabled(true);
 
   try {
-    const session = await fetchJson("/api/sessions", {
-      method: "POST",
-      headers: {
-        "Content-Type": file.type || "application/octet-stream",
-        "X-Filename": encodeURIComponent(file.name),
-      },
-      body: file,
-    });
+    const session = file
+      ? await createSceneFromUpload(file)
+      : await createSceneFromPreset(presetId);
     state.lastActionAt = Date.now();
     applySession(session);
   } catch (error) {
@@ -119,6 +146,23 @@ async function createScene() {
     state.inFlight = false;
     setGenerateDisabled(false);
   }
+}
+
+async function createSceneFromUpload(file) {
+  return fetchJson("/api/sessions", {
+    method: "POST",
+    headers: {
+      "Content-Type": file.type || "application/octet-stream",
+      "X-Filename": encodeURIComponent(file.name),
+    },
+    body: file,
+  });
+}
+
+async function createSceneFromPreset(presetId) {
+  return fetchJson(`/api/presets/${encodeURIComponent(presetId)}/sessions`, {
+    method: "POST",
+  });
 }
 
 function queueAction(action) {
@@ -216,6 +260,75 @@ function setStatus(statusKey, label, message) {
   messageText.textContent = message;
 }
 
+function renderPresetCards(emptyMessage = "当前没有可用的预设图片。") {
+  presetList.replaceChildren();
+
+  if (!state.presets.length) {
+    const empty = document.createElement("p");
+    empty.className = "preset-empty";
+    empty.textContent = emptyMessage;
+    presetList.append(empty);
+    return;
+  }
+
+  state.presets.forEach((preset) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "preset-card";
+    button.dataset.presetId = preset.preset_id;
+    button.disabled = generateButton.disabled;
+    button.addEventListener("click", () => {
+      selectPreset(preset.preset_id);
+    });
+
+    const image = document.createElement("img");
+    image.className = "preset-card-image";
+    image.src = preset.image_url;
+    image.alt = `${preset.title} 预设图片`;
+
+    const title = document.createElement("span");
+    title.className = "preset-card-title";
+    title.textContent = preset.title;
+
+    button.append(image, title);
+    presetList.append(button);
+  });
+
+  syncPresetSelectionUi();
+}
+
+function selectPreset(presetId) {
+  state.selectedPresetId = presetId;
+  imageInput.value = "";
+  syncPresetSelectionUi();
+  updateSelectedSourceText();
+}
+
+function syncPresetSelectionUi() {
+  const selectedPresetId = imageInput.files?.length ? null : state.selectedPresetId;
+  presetList.querySelectorAll(".preset-card").forEach((card) => {
+    const isSelected = card.dataset.presetId === selectedPresetId;
+    card.classList.toggle("is-selected", isSelected);
+    card.setAttribute("aria-pressed", isSelected ? "true" : "false");
+  });
+}
+
+function updateSelectedSourceText() {
+  const file = imageInput.files?.[0];
+  if (file) {
+    selectedSourceText.textContent = `当前来源: 本地图片 ${file.name}`;
+    return;
+  }
+
+  if (state.selectedPresetId) {
+    const preset = state.presets.find((item) => item.preset_id === state.selectedPresetId);
+    selectedSourceText.textContent = `当前来源: 预设图片 ${preset?.title || state.selectedPresetId}`;
+    return;
+  }
+
+  selectedSourceText.textContent = "当前未选择图片来源。";
+}
+
 function clearSession() {
   state.session = null;
   state.sessionId = null;
@@ -237,6 +350,9 @@ function handleError(error) {
 function setGenerateDisabled(disabled) {
   generateButton.disabled = disabled;
   imageInput.disabled = disabled;
+  presetList.querySelectorAll(".preset-card").forEach((card) => {
+    card.disabled = disabled;
+  });
 }
 
 async function fetchJson(url, options) {

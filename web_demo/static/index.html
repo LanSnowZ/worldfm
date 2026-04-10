@@ -27,11 +27,21 @@
       <section class="panel upload-panel">
         <div class="panel-header">
           <h2>场景初始化</h2>
-          <p>只支持图片输入, 不接入 prompt。</p>
+          <p>支持选择预设图片或上传本地图片, 不接入 prompt。</p>
+        </div>
+        <div class="preset-section">
+          <div class="preset-header">
+            <h3>预设图片</h3>
+            <p>点击卡片选择仓库内置图片, 或继续上传自己的起始图。</p>
+          </div>
+          <div id="presetList" class="preset-grid">
+            <p class="preset-empty">正在加载预设图片...</p>
+          </div>
+          <p id="selectedSourceText" class="source-hint" aria-live="polite">当前未选择图片来源。</p>
         </div>
         <div class="upload-row">
           <label class="upload-box" for="imageInput">
-            <span>选择起始图片</span>
+            <span>上传本地起始图片</span>
             <input id="imageInput" type="file" accept="image/*" />
           </label>
           <button id="generateButton" class="primary-button" type="button">生成场景</button>

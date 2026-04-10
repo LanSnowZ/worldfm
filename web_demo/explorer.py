@@ -11,7 +11,7 @@ import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal, Optional
-from urllib.parse import unquote
+from urllib.parse import quote, unquote
 
 import numpy as np
 import torch
@@ -36,6 +36,9 @@ from run_pipeline import (
 )
 
 LOGGER = logging.getLogger("worldfm.web_demo")
+RESOURCE_DIR = Path(__file__).resolve().parent / "resources"
+PRESET_PICTURES_DIR = RESOURCE_DIR / "pictures"
+PRESET_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 
 ActionName = Literal[
     "move_forward",
@@ -84,6 +87,16 @@ class DemoRuntimeConfig:
     session_ttl_sec: float
     max_upload_bytes: int
     limits: ExplorerLimits
+
+
+@dataclass
+class PresetImage:
+    """Web Demo 预设图片元数据."""
+
+    preset_id: str
+    title: str
+    file_path: Path
+    image_url: str
 
 
 @dataclass
@@ -191,6 +204,7 @@ class ExplorerEnvironment:
     def __init__(self, cfg: DictConfig) -> None:
         self.cfg = cfg
         self.runtime = build_runtime_config(cfg)
+        self._presets = load_preset_images(PRESET_PICTURES_DIR)
         self._sessions: dict[str, SceneSession] = {}
         self._lock = threading.Lock()
         self._prepare_lock = threading.Lock()
@@ -200,6 +214,10 @@ class ExplorerEnvironment:
     def sessions(self) -> dict[str, SceneSession]:
         """返回当前 session 映射."""
         return self._sessions
+
+    def list_presets(self) -> list[PresetImage]:
+        """返回可用预设图片列表."""
+        return list(self._presets.values())
 
     def prepare(self) -> None:
         """初始化外部仓库路径和输出目录."""
@@ -216,6 +234,13 @@ class ExplorerEnvironment:
             )
             self._prepared = True
             LOGGER.info("Web Demo 环境初始化完成")
+
+    def get_preset(self, preset_id: str) -> PresetImage:
+        """根据 ID 获取预设图片."""
+        preset = self._presets.get(str(preset_id))
+        if preset is None:
+            raise ExplorerError("preset_not_found", "预设图片不存在, 请重新选择", 404)
+        return preset
 
     def cleanup_expired_sessions(self) -> None:
         """清理超时 session."""
@@ -251,15 +276,37 @@ class ExplorerEnvironment:
 
     def create_session(self, image_bytes: bytes, filename: str) -> SceneSession:
         """创建新 session 并完成场景初始化."""
-        self.prepare()
-        self.cleanup_expired_sessions()
-
         if len(image_bytes) > self.runtime.max_upload_bytes:
             raise ExplorerError(
                 "image_too_large",
                 f"上传图片过大, 请控制在 {self.runtime.max_upload_bytes // (1024 * 1024)} MB 以内",
                 413,
             )
+
+        session_id, scene_dir, input_path = self._prepare_new_session_dir()
+        save_uploaded_image(image_bytes, filename, input_path)
+        return self._initialize_session(
+            session_id=session_id,
+            scene_dir=scene_dir,
+            input_path=input_path,
+        )
+
+    def create_session_from_preset(self, preset_id: str) -> SceneSession:
+        """使用预设图片创建新 session."""
+        preset = self.get_preset(preset_id)
+        session_id, scene_dir, input_path = self._prepare_new_session_dir()
+        save_preset_image(preset.file_path, input_path)
+        LOGGER.info("使用预设图片 %s 初始化 session %s", preset.preset_id, session_id)
+        return self._initialize_session(
+            session_id=session_id,
+            scene_dir=scene_dir,
+            input_path=input_path,
+        )
+
+    def _prepare_new_session_dir(self) -> tuple[str, Path, Path]:
+        """为新 session 准备输出目录并执行必要回收."""
+        self.prepare()
+        self.cleanup_expired_sessions()
 
         with self._lock:
             while len(self._sessions) >= self.runtime.max_sessions and self._sessions:
@@ -271,8 +318,16 @@ class ExplorerEnvironment:
         scene_dir = self.runtime.output_root / session_id
         scene_dir.mkdir(parents=True, exist_ok=True)
         input_path = scene_dir / "input.png"
-        save_uploaded_image(image_bytes, filename, input_path)
+        return session_id, scene_dir, input_path
 
+    def _initialize_session(
+        self,
+        *,
+        session_id: str,
+        scene_dir: Path,
+        input_path: Path,
+    ) -> SceneSession:
+        """复用现有 Step 1-4 链路初始化场景."""
         LOGGER.info("开始初始化 session %s", session_id)
         try:
             panorama_image = step1_panogen(
@@ -484,6 +539,45 @@ def save_uploaded_image(image_bytes: bytes, filename: str, output_path: Path) ->
             rgb.save(output_path, format="PNG")
     except (UnidentifiedImageError, OSError) as exc:
         raise ExplorerError("invalid_image", f"无法解析上传图片 {safe_name}", 400) from exc
+
+
+def save_preset_image(source_path: Path, output_path: Path) -> None:
+    """校验并保存预设图片."""
+    safe_name = source_path.name
+    try:
+        with Image.open(source_path) as preset_image:
+            rgb = preset_image.convert("RGB")
+            rgb.save(output_path, format="PNG")
+    except FileNotFoundError as exc:
+        raise ExplorerError("preset_invalid", f"预设图片不存在: {safe_name}", 500) from exc
+    except (UnidentifiedImageError, OSError) as exc:
+        raise ExplorerError("preset_invalid", f"无法解析预设图片 {safe_name}", 500) from exc
+
+
+def load_preset_images(preset_dir: Path) -> dict[str, PresetImage]:
+    """扫描预设图片目录并构建元数据."""
+    presets: dict[str, PresetImage] = {}
+    if not preset_dir.exists():
+        return presets
+
+    for file_path in sorted(preset_dir.iterdir()):
+        if not file_path.is_file():
+            continue
+        if file_path.suffix.lower() not in PRESET_IMAGE_EXTENSIONS:
+            continue
+
+        preset_id = file_path.stem.lower()
+        if preset_id in presets:
+            raise ValueError(f"预设图片 ID 重复: {preset_id}")
+
+        presets[preset_id] = PresetImage(
+            preset_id=preset_id,
+            title=file_path.stem,
+            file_path=file_path,
+            image_url=f"/resources/pictures/{quote(file_path.name)}",
+        )
+
+    return presets
 
 
 def build_default_camera_K(postprocess_result: PostProcessResult, render_size: int) -> np.ndarray:
