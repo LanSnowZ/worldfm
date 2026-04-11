@@ -3,67 +3,103 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>WorldFM 受限交互探索 Demo</title>
+    <title>WorldFM DEMO</title>
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
     <main class="page">
-      <section class="hero">
-        <div class="hero-copy">
-          <p class="eyebrow">WorldFM Web Demo</p>
-          <h1>受限版交互式世界探索</h1>
-          <p class="summary">
-            这个 Demo 只做固定场景代理上的小范围平移与低速转头。
-            它不会扩展无限世界, 也不是实时 3D 游戏引擎。
-          </p>
-        </div>
-        <div class="hero-status">
+      <header class="hero">
+        <section class="hero-main panel">
+          <div class="hero-brand">
+            <h1>DEMO</h1>
+          </div>
+        </section>
+
+        <section class="hero-status panel" aria-live="polite">
           <span class="status-label">当前状态</span>
-          <strong id="statusText">未开始</strong>
-          <p id="messageText">上传一张图片后点击“生成场景”。</p>
-        </div>
+          <strong id="statusText">待初始化</strong>
+          <p id="messageText">选择预设图像或上传本地图像后, 即可开始初始化场景。</p>
+        </section>
+      </header>
+
+      <section class="overview-strip" aria-label="演示范围概览">
+        <article class="overview-card panel">
+          <span class="overview-label">输入</span>
+          <strong class="overview-value">图像</strong>
+        </article>
+        <article class="overview-card panel">
+          <span class="overview-label">交互</span>
+          <strong class="overview-value">小范围平移与转头</strong>
+        </article>
+        <article class="overview-card panel">
+          <span class="overview-label">输出</span>
+          <strong class="overview-value">逐帧视角更新</strong>
+        </article>
       </section>
 
-      <section class="panel upload-panel">
-        <div class="panel-header">
-          <h2>场景初始化</h2>
-          <p>支持选择预设图片或上传本地图片, 不接入 prompt。</p>
-        </div>
-        <div class="preset-section">
-          <div class="preset-header">
-            <h3>预设图片</h3>
-            <p>点击卡片选择仓库内置图片, 或继续上传自己的起始图。</p>
+      <section class="panel setup-panel">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">Scene Setup</p>
+            <h2>场景初始化</h2>
           </div>
-          <div id="presetList" class="preset-grid">
-            <p class="preset-empty">正在加载预设图片...</p>
-          </div>
-          <p id="selectedSourceText" class="source-hint" aria-live="polite">当前未选择图片来源。</p>
+          <span class="section-note">预设图像与本地上传共用同一初始化流程</span>
         </div>
-        <div class="upload-row">
-          <label class="upload-box" for="imageInput">
-            <span>上传本地起始图片</span>
-            <input id="imageInput" type="file" accept="image/*" />
-          </label>
-          <button id="generateButton" class="primary-button" type="button">生成场景</button>
+
+        <div class="setup-grid">
+          <section class="setup-section">
+            <div class="subsection-heading">
+              <h3>预设图像</h3>
+              <p>使用仓库内置样例快速启动演示。</p>
+            </div>
+            <div id="presetList" class="preset-grid">
+              <p class="preset-empty">正在加载预设图像...</p>
+            </div>
+          </section>
+
+          <section class="setup-section upload-section">
+            <div class="subsection-heading">
+              <h3>本地输入</h3>
+              <p>上传一张本地图像作为场景初始化输入。</p>
+            </div>
+            <label class="upload-box" for="imageInput">
+              <span class="upload-label">选择本地图像</span>
+              <span class="upload-caption">支持常见图片格式, 将直接用于初始化固定场景代理</span>
+              <input id="imageInput" type="file" accept="image/*" />
+            </label>
+            <p id="selectedSourceText" class="source-hint" aria-live="polite">图像来源: 未选择</p>
+            <button id="generateButton" class="primary-button" type="button">初始化场景</button>
+          </section>
         </div>
       </section>
 
       <section class="workspace">
         <div class="panel viewport-panel">
-          <div class="panel-header">
-            <h2>当前视角</h2>
-            <p>初始化完成后, 使用键盘进行受限探索。</p>
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker">Viewport</p>
+              <h2>当前视角</h2>
+            </div>
+            <span class="section-note">键盘输入将触发下一帧推理</span>
           </div>
           <div class="viewport-frame">
             <img id="frameImage" alt="当前视角预览" />
-            <div id="framePlaceholder" class="frame-placeholder">尚未生成场景</div>
+            <div id="framePlaceholder" class="frame-placeholder">
+              <div class="placeholder-copy">
+                <strong>场景尚未初始化</strong>
+                <span>完成图像选择后开始生成第一帧</span>
+              </div>
+            </div>
           </div>
         </div>
 
         <aside class="sidebar">
-          <section class="panel">
-            <div class="panel-header">
-              <h2>位姿信息</h2>
+          <section class="panel info-panel">
+            <div class="section-heading compact-heading">
+              <div>
+                <p class="section-kicker">Pose</p>
+                <h2>位姿参数</h2>
+              </div>
             </div>
             <dl class="pose-grid">
               <div>
@@ -93,9 +129,12 @@
             </dl>
           </section>
 
-          <section class="panel">
-            <div class="panel-header">
-              <h2>操作说明</h2>
+          <section class="panel info-panel">
+            <div class="section-heading compact-heading">
+              <div>
+                <p class="section-kicker">Controls</p>
+                <h2>键盘控制</h2>
+              </div>
             </div>
             <ul class="control-list">
               <li><kbd>W</kbd> / <kbd>S</kbd> 前进 / 后退</li>
@@ -104,13 +143,16 @@
               <li><kbd>↑</kbd> / <kbd>↓</kbd> 抬头 / 低头</li>
             </ul>
             <p class="help-text">
-              浏览器会自动节流请求。当前帧生成期间, 只保留最后一个动作。
+              浏览器会根据后端限制自动节流请求。当前帧生成期间, 仅保留最后一个待执行动作。
             </p>
           </section>
 
-          <section class="panel">
-            <div class="panel-header">
-              <h2>探索边界</h2>
+          <section class="panel info-panel">
+            <div class="section-heading compact-heading">
+              <div>
+                <p class="section-kicker">Limits</p>
+                <h2>探索边界</h2>
+              </div>
             </div>
             <ul class="limit-list">
               <li>步长: <span id="limitMoveStep">-</span></li>
@@ -126,4 +168,4 @@
 
     <script src="/static/app.js" defer></script>
   </body>
- </html>
+</html>

@@ -1,10 +1,10 @@
 const STATUS_TEXT = {
-  not_started: "未开始",
-  initializing: "生成中",
-  ready: "可探索",
-  rendering: "生成下一帧中",
+  not_started: "待初始化",
+  initializing: "初始化中",
+  ready: "准备就绪",
+  rendering: "视角更新中",
   out_of_bounds: "超出边界",
-  error: "出错",
+  error: "运行异常",
 };
 
 const KEY_TO_ACTION = {
@@ -101,7 +101,7 @@ async function loadPresets() {
     renderPresetCards();
   } catch (error) {
     state.presets = [];
-    renderPresetCards("预设图片加载失败, 仍可上传本地图片。");
+    renderPresetCards("预设图像加载失败, 仍可使用本地上传。");
   }
 }
 
@@ -117,7 +117,7 @@ async function restoreSession() {
     applySession(session);
   } catch (error) {
     clearSession();
-    setStatus("not_started", "未开始", "历史 session 已失效, 请重新生成场景。");
+    setStatus("not_started", STATUS_TEXT.not_started, "历史会话已失效, 请重新初始化场景。");
   }
 }
 
@@ -125,13 +125,17 @@ async function createScene() {
   const file = imageInput.files?.[0];
   const presetId = file ? null : state.selectedPresetId;
   if (!file && !presetId) {
-    setStatus("error", "出错", "请先选择一张预设图或上传图片。");
+    setStatus("error", STATUS_TEXT.error, "请先选择一张预设图像或上传本地图像。");
     return;
   }
 
   state.inFlight = true;
   state.queuedAction = null;
-  setStatus("initializing", "生成中", "正在初始化 panorama、depth、renderer 和 WorldFM 服务。");
+  setStatus(
+    "initializing",
+    STATUS_TEXT.initializing,
+    "正在执行场景初始化, 这一步会依次准备 panorama、depth、renderer 和 WorldFM 服务。",
+  );
   setGenerateDisabled(true);
 
   try {
@@ -188,7 +192,7 @@ async function flushActionQueue() {
   const action = state.queuedAction;
   state.queuedAction = null;
   state.inFlight = true;
-  setStatus("rendering", "生成下一帧中", "上一帧保留显示, 正在生成最新视角。");
+  setStatus("rendering", STATUS_TEXT.rendering, "当前视角正在更新, 上一帧将继续保留显示。");
 
   try {
     const session = await fetchJson(`/api/sessions/${state.session.session_id}/actions`, {
@@ -260,7 +264,7 @@ function setStatus(statusKey, label, message) {
   messageText.textContent = message;
 }
 
-function renderPresetCards(emptyMessage = "当前没有可用的预设图片。") {
+function renderPresetCards(emptyMessage = "当前没有可用的预设图像。") {
   presetList.replaceChildren();
 
   if (!state.presets.length) {
@@ -316,17 +320,17 @@ function syncPresetSelectionUi() {
 function updateSelectedSourceText() {
   const file = imageInput.files?.[0];
   if (file) {
-    selectedSourceText.textContent = `当前来源: 本地图片 ${file.name}`;
+    selectedSourceText.textContent = `图像来源: 本地图像 ${file.name}`;
     return;
   }
 
   if (state.selectedPresetId) {
     const preset = state.presets.find((item) => item.preset_id === state.selectedPresetId);
-    selectedSourceText.textContent = `当前来源: 预设图片 ${preset?.title || state.selectedPresetId}`;
+    selectedSourceText.textContent = `图像来源: 预设图像 ${preset?.title || state.selectedPresetId}`;
     return;
   }
 
-  selectedSourceText.textContent = "当前未选择图片来源。";
+  selectedSourceText.textContent = "图像来源: 未选择";
 }
 
 function clearSession() {
@@ -349,6 +353,7 @@ function handleError(error) {
 
 function setGenerateDisabled(disabled) {
   generateButton.disabled = disabled;
+  generateButton.textContent = disabled ? "初始化中..." : "初始化场景";
   imageInput.disabled = disabled;
   presetList.querySelectorAll(".preset-card").forEach((card) => {
     card.disabled = disabled;
