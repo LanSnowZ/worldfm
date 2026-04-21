@@ -2,8 +2,8 @@
 set -euo pipefail
 
 CONDA_ENV_PATH=''
-conda env create -f WorldFM.yaml --prefix WorldFM
-conda activate WorldFM
+mamba env create -f WorldFM.yaml --prefix WorldFM
+mamba activate WorldFM
 uv pip install -r requirements.txt
 git submodule update --init --recursive
 
