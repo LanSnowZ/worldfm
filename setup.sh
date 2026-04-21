@@ -4,18 +4,18 @@ set -euo pipefail
 CONDA_ENV_PATH=''
 conda env create -f WorldFM.yaml --prefix WorldFM
 conda activate WorldFM
-pip install -r requirements.txt
+uv pip install -r requirements.txt
 git submodule update --init --recursive
 
 
 # HunyuanWorld-1.0 requirements
 #   real-esrgan
 cd submodules/Real-ESRGAN
-pip install basicsr-fixed facexlib gfpgan
+uv pip install basicsr-fixed facexlib gfpgan
 python setup.py develop
 #   zim anything
 cd ../ZIM
-pip install -e .
+uv pip install -e .
 
 # MoGe version.
 cd ../MoGe
